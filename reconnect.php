@@ -39,7 +39,8 @@ class reconnect{
 				$this->connection['options']['flags']=0;
 			if($this->connection['scheme']!=false){
 				$this->dbType=$this->connection['scheme'];
-				$driverClass='dbal_'.mb_strtolower($this->dbType).'_driver';
+				$driverClass='reconnectDriver_'.mb_strtolower($this->dbType);
+				require_once($driverClass.'.php');
 				if(class_exists($driverClass)){
 					if($driverClass::connect($this,$this->connection,&$this->handle)){//mind the pointer
 						$this->open=true;
@@ -60,7 +61,7 @@ class reconnect{
 	}
 	
 	public function close(){
-		$driverClass='dbal_'.mb_strtolower($this->dbType).'_driver';
+		$driverClass='reconnectDriver_'.mb_strtolower($this->dbType);
 		if($driverClass::close($this,&$this->handle)){
 			$this->handle=false;
 			return true;
@@ -79,6 +80,7 @@ class reconnect{
 		// create new reconnectDB
 		$key=md5('reconnect'.rand(1000,9999).time());
 		$this->authkeys[]=$key;
+		require_once('reconnectDB.php');
 		$db = new reconnectDB($this,$key,$dbName);
 		if($db){
 			$this->childs[$dbName]=$db;
@@ -109,7 +111,7 @@ class reconnect{
 		if(!$this->handle)
 			return false;
 		$this->connection['options']['charset']=$charset;
-		$driverClass='dbal_'.mb_strtolower($this->dbType).'_driver';
+		$driverClass='reconnectDriver_'.mb_strtolower($this->dbType);
 		return $driverClass::set_charset($this,$charset,&$this->handle);
 	}
 	public function __toString(){
@@ -120,7 +122,7 @@ class reconnect{
 		return $this->connection['scheme'].'://'.$this->connection['host'].':'.$this->connection['pass'].'@'.$this->connection['host'].':'.$this->connection['port'].((isset($this->connection['db']))?'/'.$this->connection['db']:'').((count($options))?('?'.implode('&',$options)):'');
 	}
 	public function __call($function,$args){
-		$driverClass='dbal_'.mb_strtolower($this->dbType).'_driver';
+		$driverClass='reconnectDriver_'.mb_strtolower($this->dbType);
 		if(function_exists($driverClass::$function))
 			return $driverClass::$function($args);
 		else

@@ -32,7 +32,7 @@ class reconnectCollection{
 		$this->name=$name;
 	}
 	public function __call($function,$args){
-		$driverClass='dbal_'.mb_strtolower($this->dbType).'_driver';
+		$driverClass='reconnectDriver_'.mb_strtolower($this->dbType);
 		$funct="collection_".$function;
 		if(function_exists($driverClass::$funct))
 			return $driverClass::$funct($args);
@@ -224,6 +224,7 @@ class reconnectCollection{
 	//assembling query-data
 	//return reconnectQuery
 	public function query($arg=false){
+		require_once('reconnectQuery.php');
 		if($arg===false){
 			//$conn->db->table->select('*')->count()->query()
 			//gather query blocks

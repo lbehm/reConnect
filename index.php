@@ -1,9 +1,5 @@
 <?php
 require_once('reconnect.php');
-require_once('reconnectDB.php');
-require_once('reconnectCollection.php');
-require_once('reconnectQuery.php');
-require_once('dbal_mysql_driver.php');
 
 $conn = new reconnect("mySQL://demo@localhost");
 $table=$conn->mysql->db;

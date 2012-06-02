@@ -1,5 +1,5 @@
 <?php
-class dbal_mysql_driver{
+class reconnectDriver_mysql{
 	public static $last_link = false;
 	public static $last_db = false;
 	

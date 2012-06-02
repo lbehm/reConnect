@@ -37,6 +37,7 @@ class reconnectDB{
 		// create new reconnectCollection
 		$key=md5('reconnect'.rand(1000,9999).time());
 		$this->authkeys[]=$key;
+		require_once('reconnectCollection.php');
 		$coll = new reconnectCollection($this,$key,$name);
 		if($coll){
 			$this->childs[$name]=$coll;
@@ -63,7 +64,7 @@ class reconnectDB{
 		);
 	}
 	public function __call($function,$args){
-		$driverClass='dbal_'.mb_strtolower($this->dbType).'_driver';
+		$driverClass='reconnectDriver_'.mb_strtolower($this->dbType);
 		$funct="db_".$function;
 		if(function_exists($driverClass::$funct))
 			return $driverClass::$funct($args);
