@@ -17,6 +17,7 @@ class reconnectCollection{
 	private $query_sort;
 	private $query_distinct;
 	private $query_count;
+	private $query_replace;
 	private $query_insert;
 	private $query_update;
 	private $query_remove;
@@ -176,13 +177,27 @@ class reconnectCollection{
 		$this->query_count = (bool) $data;
 		return $this;
 	}
+	public function replace($data,$overwrite=true){
+		/* deal with it:
+			->replace(array("col"=>"abc","field"=>1))
+			SQL: REPLACE INTO {table} (`col`, `field`) VALUES('abc', 1)
+		*/
+		if(!is_array($data) || !is_bool($overwrite))
+			throw new Exception("ERROR: Unexpected parameter at reconnectCollection->replace( array [, bool ] )!");
+		if(count($this->query_replace)){
+			$this->query_replace = ($overwrite)?array_merge($this->query_replace,$data):array_merge($data,$this->query_replace);
+		}
+		else
+			$this->query_replace = $data;
+		return $this;
+	}
 	public function insert($data,$overwrite=true){
 		/* deal with it:
 			->insert(array("col"=>"abc","field"=>1))
 			SQL: INSERT INTO {table} (`col`, `field`) VALUES('abc', 1)
 		*/
 		if(!is_array($data) || !is_bool($overwrite))
-			throw new Exception("ERROR: Unexpected parameter at reconnectCollection->update( array [, bool ] )!");
+			throw new Exception("ERROR: Unexpected parameter at reconnectCollection->insert( array [, bool ] )!");
 		if(count($this->query_insert)){
 			/*example:
 				$this->query_insert==array("col"=>5)
@@ -237,6 +252,7 @@ class reconnectCollection{
 		$this->query_sort=null;
 		$this->query_distinct=null;
 		$this->query_count=null;
+		$this->query_replace=null;
 		$this->query_insert=null;
 		$this->query_update=null;
 		$this->query_remove=null;
@@ -266,6 +282,7 @@ class reconnectCollection{
 				'distinct'=>$this->query_distinct,
 				'count'=>$this->query_count,
 				'insert'=>$this->query_insert,
+				'replace'=>$this->query_replace,
 				'update'=>$this->query_update,
 				'remove'=>$this->query_remove
 			);

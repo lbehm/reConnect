@@ -39,6 +39,8 @@ class reconnectDriver_mysql{
 			return 'remove';
 		elseif($data['update']==true)
 			return 'update';
+		elseif($data['replace']==true)
+			return 'replace';
 		elseif($data['insert']==true)
 			return 'insert';
 		elseif(is_array($data['field'])||($data['field']==true)||($data['count']==true)||($data['distinct']==true)||($data['where']==true)||($data['sort']==true)||($data['limit']==true))
@@ -99,6 +101,19 @@ class reconnectDriver_mysql{
 						}
 					}
 					$query.='UPDATE `'.$data['db'].'`.`'.$data['table'].'` SET '.$querySet.$queryWhere.$queryLimit.';';
+					return self::query_sql($query,$data['handle']);
+					break;
+				case'replace':
+					//build replace into query
+					$query = $queryField = $queryValue='';
+					$i=0;
+					foreach($data['replace'] as $field=>$value){
+						//toDo escape
+						$queryField.=(($i)?', ':' ')." `".$field."`";
+						$queryValue.=(($i)?', ':' ').((is_int($value))?$value:"'".$value."'");
+						$i++;
+					}
+					$query.='REPLACE INTO `'.$data['db'].'`.`'.$data['table'].'` ('.$queryField.' ) VALUES('.$queryValue.' );';
 					return self::query_sql($query,$data['handle']);
 					break;
 				case'insert':
