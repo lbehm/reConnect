@@ -4,11 +4,10 @@ require_once('reconnect.php');
 $conn = new reconnect("mySQL://demo@localhost");
 $table=$conn->mysql->db;
 $query = $table->select(array('Host'=>'HOSTNAME','Db'=>'DATABASE','User'))->where(array('Host'=>'localhost','User'=>array('%ne'=>'root')))->sort(array('Db'))->query();
+//$query = $conn->query("SELECT * FROM mysql.db;");
+$data = $query->getAssoc();
 $conn->close();
-var_dump($table);
 
-/*
-$data = $query->fetchAssoc();
 ?>
 <html>
 <head><title>Test-DB-Zugriff</title></head>
@@ -32,4 +31,3 @@ foreach($data as $id=>$arr){
 <textarea><?php var_dump($data);?></textarea>
 </body>
 </html>
-*/

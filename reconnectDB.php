@@ -66,9 +66,9 @@ class reconnectDB{
 	public function __call($function,$args){
 		$driverClass='reconnectDriver_'.mb_strtolower($this->dbType);
 		$funct="db_".$function;
-		if(function_exists($driverClass::$funct))
+		if(method_exists($driverClass,$funct))
 			return $driverClass::$funct($args);
-		elseif(function_exists($driverClass::$function))
+		elseif(method_exists($driverClass,$function))
 			return $driverClass::$function($args);
 		else
 			return false;//toDo: throw Exception

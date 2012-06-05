@@ -73,13 +73,13 @@ SELECT * FROM users WHERE age <> 33
 SELECT * FROM users WHERE name LIKE "%Joe%"
 ```
 ```php
-	$db->users->where(array("name" => array('%match' => "/Joe/")));
+	$db->users->where(array("name" => array('%match' => "Joe")));
 ```
 ```sql
 SELECT * FROM users WHERE name LIKE "Joe%"
 ```
 ```php
-	$db->users->where(array("name" => array('%match' => "/^Joe/")));
+	$db->users->where(array("name" => array('%match' => "^Joe")));
 ```
 ```sql
 SELECT * FROM users WHERE age>33 AND age<=40
@@ -91,7 +91,7 @@ SELECT * FROM users WHERE age>33 AND age<=40
 SELECT * FROM users ORDER BY name DESC
 ```
 ```php
-	$db->users->sort(array("name" => $db::DESC));
+	$db->users->sort(array("name" => reconnect::DESC));
 ```
 ```sql
 SELECT * FROM users WHERE a=1 and b='q'

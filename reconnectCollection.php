@@ -34,9 +34,9 @@ class reconnectCollection{
 	public function __call($function,$args){
 		$driverClass='reconnectDriver_'.mb_strtolower($this->dbType);
 		$funct="collection_".$function;
-		if(function_exists($driverClass::$funct))
+		if(method_exists($driverClass,$funct))
 			return $driverClass::$funct($args);
-		elseif(function_exists($driverClass::$function))
+		elseif(method_exists($driverClass,$function))
 			return $driverClass::$function($args);
 		else
 			return false;//toDo: throw Exception
@@ -141,13 +141,13 @@ class reconnectCollection{
 			if(is_numeric($key)){
 				//no sort direction found - work with $val as fieldname
 				if(is_int($key) && is_string($val) && !is_numeric($val))
-					$this->query_sort[]=array($val,1);
+					$this->query_sort[]=array($val=>1);
 				else
 					throw new Exception("ERROR: Unexpected parameter as fieldname at reconnectCollection->sort( array )!!");
 			}
 			elseif(is_string($key) && is_numeric($val)){
 				//there is a sort direction at $val - $key is our fieldname
-				$this->query_sort[]=array($key,intval($val));
+				$this->query_sort[]=array($key=>intval($val));
 			}
 			else{
 				throw new Exception("ERROR: Unexpected parameter at reconnectCollection->sort( array )!");
@@ -233,6 +233,7 @@ class reconnectCollection{
 				'table'=>$this->name,
 				'handle'=>$this->handle,
 				'dbType'=>$this->dbType,
+				'driverClass'=>'reconnectDriver_'.mb_strtolower($this->dbType),
 				'field'=>$this->query_field,
 				'field_alias'=>$this->query_field_alias,
 				'where'=>$this->query_where,
@@ -253,7 +254,11 @@ class reconnectCollection{
 		}
 		elseif(is_string($arg)){
 			//execute query-string; ignores any previus collectionFunctions like ->select('foo')
-			$query = new reconnectQuery($arg);
+			$query = new reconnectQuery(array(
+				'sql'=>$arg,
+				'handle'=>$this->handle,
+				'driverClass'=>'reconnectDriver_'.mb_strtolower($this->dbType)
+			));
 			if($query)
 				$this->flushQuery();
 			$this->lastQuery = $query;

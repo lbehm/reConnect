@@ -68,6 +68,22 @@ class reconnect{
 		}
 		return false;
 	}
+	public function query($arg){
+		require_once('reconnectQuery.php');
+		if(is_string($arg)){
+			//execute query-string
+			$query = new reconnectQuery(array(
+				'sql'=>$arg,
+				'handle'=>$this->handle,
+				'driverClass'=>'reconnectDriver_'.mb_strtolower($this->dbType)
+			));
+			return $query;
+		}
+		else{
+			throw new Exception('Unexpected parameter for function reconnectCollection::query()');
+		}
+	}
+	
 	public function selectDB($dbName){
 		if(!$this->handle)
 			return false;
@@ -123,7 +139,7 @@ class reconnect{
 	}
 	public function __call($function,$args){
 		$driverClass='reconnectDriver_'.mb_strtolower($this->dbType);
-		if(function_exists($driverClass::$function))
+		if(method_exists($driverClass,$function))
 			return $driverClass::$function($args);
 		else
 			return false;//toDo: throw Exception
