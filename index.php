@@ -1,7 +1,7 @@
 <?php
 require_once('reconnect.php');
 
-$conn = new reconnect("mySQL://demo@localhost");
+$conn = new reconnect("mySQL://root@localhost");
 $table=$conn->mysql->db;
 $query = $table->select(array('Host'=>'HOSTNAME','Db'=>'DATABASE','User'))->where(array('Host'=>'localhost','User'=>array('%ne'=>'root')))->sort(array('Db'))->query();
 //$query = $conn->query("SELECT * FROM mysql.db;");

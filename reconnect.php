@@ -42,7 +42,7 @@ class reconnect{
 				$driverClass='reconnectDriver_'.mb_strtolower($this->dbType);
 				require_once($driverClass.'.php');
 				if(class_exists($driverClass)){
-					if($driverClass::connect($this,$this->connection,&$this->handle)){//mind the pointer
+					if($driverClass::connect($this,$this->connection,$this->handle)){
 						$this->open=true;
 						if(isset($this->connection['options']['charset']))
 							$this->set_charset($this->connection['options']['charset']);
@@ -62,7 +62,7 @@ class reconnect{
 	
 	public function close(){
 		$driverClass='reconnectDriver_'.mb_strtolower($this->dbType);
-		if($driverClass::close($this,&$this->handle)){
+		if($driverClass::close($this,$this->handle)){
 			$this->handle=false;
 			return true;
 		}
@@ -128,7 +128,7 @@ class reconnect{
 			return false;
 		$this->connection['options']['charset']=$charset;
 		$driverClass='reconnectDriver_'.mb_strtolower($this->dbType);
-		return $driverClass::set_charset($this,$charset,&$this->handle);
+		return $driverClass::set_charset($this,$charset,$this->handle);
 	}
 	public function __toString(){
 		$options=array();

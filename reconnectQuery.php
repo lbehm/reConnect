@@ -2,6 +2,7 @@
 class reconnectQuery{
 	private $queryData,
 			$resultData,
+			$queryType,
 			$affectedRows,
 			$cursorPos=false;
 	public function __construct($data){
@@ -10,7 +11,7 @@ class reconnectQuery{
 		require_once($driver.'.php');
 		
 		if(is_array($data)){
-			if(is_string($data['sql'])){
+			if(isset($data['sql'])&&is_string($data['sql'])){
 				if(method_exists($driver,'query_sql')){
 					$query=$driver::query_sql($data['sql'],$data['handle']);
 					//fetch result
@@ -26,22 +27,35 @@ class reconnectQuery{
 						}
 					}
 				}
-				//toDo
+				throw new Exception('No way we can use sql on this DBS. I think this could be a noSQl-DB!');
 			}
 			else{
 				//parse array / build query
 				$query=$driver::query_array($data);
-				//fetch result
-				$line=0;
-				while($result=$driver::fetch_assoc($query)){
-					if($result===false)
-						$this->printError();
-					if(count($result)&&$result!==false){
-						foreach($result as $field => $val){
-							$this->resultData[$line][$field]=$val;
+				$this->queryType=$driver::getTypeByArray($data);
+				switch($this->queryType){
+					case'select':
+						//fetch result
+						$line=0;
+						while($result=$driver::fetch_assoc($query)){
+							if($result===false)
+								$this->printError();
+							if(count($result)&&$result!==false){
+								foreach($result as $field => $val){
+									$this->resultData[$line][$field]=$val;
+								}
+								$line++;
+							}
 						}
-						$line++;
-					}
+						break;
+					case'insert':
+					case'update':
+					case'remove':
+						//gather data like affected rows, etc
+						$affected=$driver::affected_rows($query);
+						if($affected>=0)
+							$this->affectedRows=$affected;
+					default:
 				}
 			}
 		}
@@ -72,7 +86,9 @@ class reconnectQuery{
 	public function getAssoc(){
 		return $this->resultData;
 	}
-	public function getAffectedRows(){}
+	public function getAffectedRows(){
+		return $this->affectedRows;
+	}
 	public function getRow($row){}
 	public function getField($row,$field){}
 	public function first(){

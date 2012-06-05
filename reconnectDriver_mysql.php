@@ -3,12 +3,12 @@ class reconnectDriver_mysql{
 	public static $last_link = false;
 	public static $last_db = false;
 	
-	public function connect($dbal,$data,$handle){
+	public static function connect($dbal,$data,&$handle){
 		$handle=@mysql_connect($data['host'].':'.$data['port'],$data['user'],$data['pass'],false,$data['options']['flags']);
 		self::$last_link=$handle;
 		return ($handle)?true:false;
 	}
-	public function selectDB($dbal,$dbName,$handle){
+	public static function selectDB($dbal,$dbName,$handle){
 		if(!$handle)
 			return false;
 		$r = @mysql_select_db($dbName,$handle);
@@ -16,129 +16,193 @@ class reconnectDriver_mysql{
 			self::$last_db = $dbName;
 		return $r;
 	}
-	public function close($dbal,$handle){
+	public static function close($dbal,$handle){
 		if($handle){
 			self::$last_link=false;
 			return @mysql_close($handle);
 		}
 	}
-	public function set_charset($dbal,$charset,$handle){
+	public static function set_charset($dbal,$charset,$handle){
 		if(!$handle)
 			return false;
 		self::$last_link=$handle;
 		return @mysql_set_charset($charset, $handle);
 	}
-	public function query_sql($query,$handle=false){
+	public static function query_sql($query,$handle=false){
 		if(!$handle)
 			return false;
 		self::$last_link=$handle;
 		return @mysql_query($query,$handle);
-
 	}
-	public function query_array($data){
+	public static function getTypeByArray($data){
+		if($data['remove']===true)
+			return 'remove';
+		elseif($data['update']==true)
+			return 'update';
+		elseif($data['insert']==true)
+			return 'insert';
+		elseif(is_array($data['field'])||($data['field']==true)||($data['count']==true)||($data['distinct']==true)||($data['where']==true)||($data['sort']==true)||($data['limit']==true))
+			return 'select';
+		else
+			return false;
+	}
+	public static function query_array($data){
 		if(isset($data['handle']) && isset($data['db']) && isset($data['table'])){
 			self::$last_link=$data['handle'];
-			
-			if($data['remove']===true){
-				//build delete query
-				$query='';
-				$queryWhere='';
-				$queryOrder='';
-				$queryLimit='';
-				
-				if($data['where']==true){
-					$queryWhere=$this->whereToSql($data['where']);
-				}
-				if($data['sort']==true){}
-				if($data['limit']==true){}
-				$query='DELETE FROM `'.$data['db'].'`.`'.$data['table'].'`'.
-					(($queryWhere!='')?' WHERE '.$queryWhere:'').
-					(($queryOrder!='')?' ORDER BY '.$queryOrder:'').
-					(($$queryLimit!='')?' LIMIT '.$queryLimit:'').
-					';';
-				return @mysql_query($query,$data['handle']);
-			}
-			elseif($data['update']==true){}
-			elseif($data['insert']==true){}
-			elseif($data['field']==true){
-				//build select query
-				$query='';
-				$queryDistinct='';
-				$queryField='';
-				$queryWhere='';
-				$queryOrder='';
-				$queryLimit='';
-				
-				if($data['count']==true){
-					$queryField=' COUNT(*)';
-				}
-				elseif($data['field_alias']==true){
-					foreach($data['field'] as $i=>$field){
-						if($i)
-							$queryField.=',';
-						$queryField.=' `'.$field.'`';
-						if(isset($data['field_alias'][$field]))
-							$queryField.=' AS `'.$data['field_alias'][$field].'`';
+			switch(self::getTypeByArray($data)){
+				case'remove':
+					//build delete query
+					$query='';
+					$queryWhere='';
+					$queryOrder='';
+					$queryLimit='';
+					
+					if($data['where']==true){
+						$queryWhere=self::whereToSql($data['where']);
 					}
-				}
-				else{
-					foreach($data['field'] as $i=>$field){
-						if($i)
-							$queryField.=',';
-						$queryField.=' `'.$field.'`';
+					if($data['sort']==true){
+						foreach($data['sort'] as $i=>$arr)
+							foreach($arr as $key=>$direction){
+								if($i)
+									$queryOrder.=',';
+								$queryOrder.=' `'.$key.'`'.(($direction == -1)?' DESC':' ASC');
+							}
 					}
-				}
-				
-				if($data['distinct']==true){
-					$queryDistinct=' DISTINCT';
-				}
-				
-				if($data['where']==true){
-					$tmp=self::whereToSql($data['where']);
-					$queryWhere=(isset($tmp)&&$tmp!='')?' WHERE'.$tmp:'';
-					unset($tmp);
-				}
-				
-				if($data['sort']==true){
-					foreach($data['sort'] as $i=>$arr)
-						foreach($arr as $key=>$direction){
-							if($i)
-								$queryOrder.=',';
-							$queryOrder.=' `'.$key.'`'.(($direction == -1)?' DESC':' ASC');
+					if($data['limit']==true){
+						$queryLimit.=intval($data['limit']);
+					}
+					$query='DELETE FROM `'.$data['db'].'`.`'.$data['table'].'`'.
+						(($queryWhere!='')?' WHERE '.$queryWhere:'').
+						(($queryOrder!='')?' ORDER BY '.$queryOrder:'').
+						(($queryLimit!='')?' LIMIT '.$queryLimit:'').
+						';';
+					return @mysql_query($query,$data['handle']);
+					break;
+				case'update':
+					//build update query
+					$query = $querySet = $queryWhere = $queryLimit='';
+					$i=0;
+					foreach($data['update'] as $field=>$value){
+						//toDo escape
+						$querySet.=(($i)?',':'').' `'.$field.'` = '.((is_int($value))?$value:"'".$value."'");
+						$i++;
+					}
+					if($data['where']==true){
+						$queryWhere=self::whereToSql($data['where']);
+						if($queryWhere!='')
+							$queryWhere=' WHERE'.$queryWhere;
+					}
+					if($data['limit']==true){
+						$queryLimit.=" LIMIT ".intval($data['limit']);
+						if($data['offset']==true){
+							$queryLimit.=" OFFSET ".intval($data['offset']);
 						}
-					$queryOrder=($queryOrder!='')?' ORDER BY'.$queryOrder:'';
-				}
-				if($data['limit']==true){
-					$queryLimit.=" LIMIT ".$data['limit'];
-					if($data['offset']==true){
-						$queryLimit.=" OFFSET ".$data['offset'];
 					}
-				}
-				$query="SELECT".
-					$queryDistinct.
-					$queryField.
-					' FROM `'.$data['db'].'`.`'.$data['table'].'`'.
-					$queryWhere.
-					$queryOrder.
-					$queryLimit.';';
-				return self::query_sql($query,$data['handle']);
+					$query.='UPDATE `'.$data['db'].'`.`'.$data['table'].'` SET '.$querySet.$queryWhere.$queryLimit.';';
+					return self::query_sql($query,$data['handle']);
+					break;
+				case'insert':
+					//build insert into query
+					$query = $queryField = $queryValue='';
+					$i=0;
+					foreach($data['insert'] as $field=>$value){
+						//toDo escape
+						$queryField.=(($i)?', ':' ')." `".$field."`";
+						$queryValue.=(($i)?', ':' ').((is_int($value))?$value:"'".$value."'");
+						$i++;
+					}
+					$query.='INSERT INTO `'.$data['db'].'`.`'.$data['table'].'` ('.$queryField.' ) VALUES('.$queryValue.' );';
+					return self::query_sql($query,$data['handle']);
+					break;
+				case'select':
+					//build select query
+					$query='';
+					$queryDistinct='';
+					$queryField='';
+					$queryWhere='';
+					$queryOrder='';
+					$queryLimit='';
+					
+					if($data['count']==true){
+						$queryField=' COUNT(*)';
+					}
+					elseif($data['field_alias']==true){
+						foreach($data['field'] as $i=>$field){
+							if($i)
+								$queryField.=',';
+							$queryField.=' `'.$field.'`';
+							if(isset($data['field_alias'][$field]))
+								$queryField.=' AS `'.$data['field_alias'][$field].'`';
+						}
+					}
+					else{
+						if(count($data['field']))
+							foreach($data['field'] as $i=>$field){
+								if($i)
+									$queryField.=',';
+								$queryField.=' `'.$field.'`';
+							}
+						else
+							$queryField=' *';
+					}
+					
+					if($data['distinct']==true){
+						$queryDistinct=' DISTINCT';
+					}
+					
+					if($data['where']==true){
+						$tmp=self::whereToSql($data['where']);
+						$queryWhere=(isset($tmp)&&$tmp!='')?' WHERE'.$tmp:'';
+						unset($tmp);
+					}
+					
+					if($data['sort']==true){
+						foreach($data['sort'] as $i=>$arr)
+							foreach($arr as $key=>$direction){
+								if($i)
+									$queryOrder.=',';
+								$queryOrder.=' `'.$key.'`'.(($direction == -1)?' DESC':' ASC');
+							}
+						$queryOrder=($queryOrder!='')?' ORDER BY'.$queryOrder:'';
+					}
+					if($data['limit']==true){
+						$queryLimit.=" LIMIT ".intval($data['limit']);
+						if($data['offset']==true){
+							$queryLimit.=" OFFSET ".intval($data['offset']);
+						}
+					}
+					$query="SELECT".
+						$queryDistinct.
+						$queryField.
+						' FROM `'.$data['db'].'`.`'.$data['table'].'`'.
+						$queryWhere.
+						$queryOrder.
+						$queryLimit.';';
+					return self::query_sql($query,$data['handle']);
+					break;
+				default:
 			}
 		}
 		throw new Exception("Unable to build query");
 	}
-	public function fetch_assoc($resource){
+	public static function fetch_assoc($resource=false){
 		if(!$resource)
 			return false;
 		return @mysql_fetch_assoc($resource);
 	}
-	public function getLastError($handle=false){
+	public static function getLastError($handle=false){
 		if(!$handle)
 			$handle=self::$last_link;
 		return @mysql_error($handle);
 	}
+	public static function affected_rows($resource=false){
+		if(!$resource)
+			return false;
+		return @mysql_affected_rows($resource);
+	}
 	
 	/*helper*/
-	public function whereToSql($array,$glue=' AND'){
+	public static function whereToSql($array,$glue=' AND'){
 		/* deal with it:
 			->where(array(
 				"col"=>5,
@@ -260,6 +324,5 @@ class reconnectDriver_mysql{
 		}
 		return $ret;
 	}
-	
 }
 ?>

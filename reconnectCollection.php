@@ -17,6 +17,7 @@ class reconnectCollection{
 	private $query_sort;
 	private $query_distinct;
 	private $query_count;
+	private $query_insert;
 	private $query_update;
 	private $query_remove;
 	
@@ -175,6 +176,27 @@ class reconnectCollection{
 		$this->query_count = (bool) $data;
 		return $this;
 	}
+	public function insert($data,$overwrite=true){
+		/* deal with it:
+			->insert(array("col"=>"abc","field"=>1))
+			SQL: INSERT INTO {table} (`col`, `field`) VALUES('abc', 1)
+		*/
+		if(!is_array($data) || !is_bool($overwrite))
+			throw new Exception("ERROR: Unexpected parameter at reconnectCollection->update( array [, bool ] )!");
+		if(count($this->query_insert)){
+			/*example:
+				$this->query_insert==array("col"=>5)
+				SQL: {...} SET `col` = 5 {...}
+			*/
+			$this->query_insert = ($overwrite)?array_merge($this->query_insert,$data):array_merge($data,$this->query_insert);
+		}
+		else
+			$this->query_insert = $data;
+		return $this;
+	}
+	public function save($data,$overwrite=true){
+		return $this->insert($data,$overwrite);
+	}
 	public function update($data,$overwrite=true){
 		/* deal with it:
 			->update(array("col"=>"abc","field"=>array('%inc'=>1)))
@@ -203,8 +225,8 @@ class reconnectCollection{
 		$this->query_remove = (bool) $data;
 		return $this;
 	}
-	public function delete(){
-		return $this->remove();
+	public function delete($data=true){
+		return $this->remove($data);
 	}
 	public function flushQuery(){
 		$this->query_field=null;
@@ -215,15 +237,16 @@ class reconnectCollection{
 		$this->query_sort=null;
 		$this->query_distinct=null;
 		$this->query_count=null;
+		$this->query_insert=null;
 		$this->query_update=null;
 		$this->query_remove=null;
 		return $this;
 	}
 	
 	
-	//assembling query-data
-	//return reconnectQuery
 	public function query($arg=false){
+		//assembling query-data
+		//return reconnectQuery
 		require_once('reconnectQuery.php');
 		if($arg===false){
 			//$conn->db->table->select('*')->count()->query()
@@ -242,6 +265,7 @@ class reconnectCollection{
 				'sort'=>$this->query_sort,
 				'distinct'=>$this->query_distinct,
 				'count'=>$this->query_count,
+				'insert'=>$this->query_insert,
 				'update'=>$this->query_update,
 				'remove'=>$this->query_remove
 			);
