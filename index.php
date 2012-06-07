@@ -2,9 +2,44 @@
 require_once('reconnect.php');
 
 $conn = new reconnect("mySQL://root@localhost");
-$table=$conn->mysql->db;
-$query = $table->select(array('Host'=>'HOSTNAME','Db'=>'DATABASE','User'))->where(array('Host'=>'localhost','User'=>array('%ne'=>'root')))->sort(array('Db'))->query();
-//$query = $conn->query("SELECT * FROM mysql.db;");
+//$conn->test->remove('table');
+$table=$conn->test->table;
+if(!$table)
+	$table=$conn->test->create(array(
+		'name'=>'table',
+		'fields'=>array(
+			'id'=>array(
+				'type'=>'bigint',
+				'unsigned'=>true,
+				'zerofill'=>false,
+				'null'=>1,
+				'auto_increment'=>true,
+				'primary'=>true,
+				'comment'=>'Entry-ID'
+			),
+			'foo'=>array(
+				'type'=>'varchar',
+				'length'=>255,
+				'null'=>-1
+			),
+			'bar'=>array(
+				'type'=>'varchar',
+				'length'=>255
+			)
+		),
+		'primary'=>array(
+			'id'
+		),
+		'options'=>array(
+			'type'=>'Memory',
+			'charset'=>'utf8',
+			'collate'=>'utf8_bin'
+		)
+	));
+if(!$table)
+	die("Can't create collection");
+$table->insert(array('foo'=>'TESTTEXT','bar'=>'Lorem Ipsum'))->query();
+$query=$table->select()->query();
 $data = $query->getAssoc();
 $conn->close();
 

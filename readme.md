@@ -181,3 +181,49 @@ DELETE FROM users WHERE z>=10 LIMIT 20
 ```php
 	$db->users->remove()->where(array("z" => array('%gte'=>10)))->limit(20);
 ```
+
+
+##Creating a table
+```php
+$table=$conn->test->createTable(array(
+	'name'=>'temp',
+	//'copy'=>'table',
+	'fields'=>array(
+		'id'=>array(
+			'type'=>'tinyint',
+			'length'=>'3',
+			'decimals'=>false,
+			'unsigned'=>false,
+			'zerofill'=>false,
+			'mode'=>'unicode',//unicode | ascii | binaray
+			'data'=>array('val1','val2','val3','val4'),//enum, set
+			'null'=>1,//1(NULL),false(DEFAULT),-1(NOT NULL)
+			'default'=>false,
+			'auto_increment'=>false,
+			'unique'=>false,
+			'primary'=>true,
+			'comment'=>''
+		)
+	),
+	'temporary'=>false,
+	'quiet'=>false,
+	'primary'=>array(
+		'id'
+	),
+	'options'=>array(
+		'autoincrement'=>0,
+		'type'=>'InnoDB',
+		'row_format'=>'compact',
+		'charset'=>'utf8',
+		'collate'=>'utf8_bin',
+		'comment'=>'Testtable',
+		'min_rows'=>false,
+		'max_rows'=>false,
+		'avg_row_length'=>false,
+		/*MyISAM only*/
+		'checksum'=>false,
+		'PACK_KEYS'=>false,
+		'delay_key_write'=>false,
+	)
+));
+```
