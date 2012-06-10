@@ -13,6 +13,7 @@ class reconnectQuery{
 		if(is_array($data)){
 			if(isset($data['sql'])&&is_string($data['sql'])){
 				if(method_exists($driver,'query_sql')){
+					$driver::query_sql("USE `".$driver::escapeKey($data['db'])."`;",$data['handle']);
 					$query=$driver::query_sql($data['sql'],$data['handle']);
 					//fetch result
 					$line=0;
@@ -27,7 +28,8 @@ class reconnectQuery{
 						}
 					}
 				}
-				throw new Exception('No way we can use sql on this DBS. I think this could be a noSQl-DB!');
+				else
+					throw new Exception('No way we can use sql on this DBS. I think this could be a noSQl-DB!');
 			}
 			else{
 				//parse array / build query

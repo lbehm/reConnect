@@ -297,6 +297,7 @@ class reconnectCollection{
 			//execute query-string; ignores any previus collectionFunctions like ->select('foo')
 			$query = new reconnectQuery(array(
 				'sql'=>$arg,
+				'db'=>$this->dbName,
 				'handle'=>$this->handle,
 				'driverClass'=>'reconnectDriver_'.mb_strtolower($this->dbType)
 			));
