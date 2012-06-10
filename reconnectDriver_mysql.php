@@ -148,7 +148,7 @@ class reconnectDriver_mysql{
 							$query['field'].=((isset($field['null']))?$field['null']:'');
 							$query['field'].=((isset($field['default']))?$field['default']:'');
 							$query['field'].=((isset($field['auto_increment']))?$field['auto_increment']:'');
-							$query['field'].=((isset($field['unique']))?$field['auto_increment']:'');
+							$query['field'].=((isset($field['unique']))?$field['unique']:'');
 							$query['field'].=((isset($field['comment']))?$field['comment']:'');
 						}
 					}
