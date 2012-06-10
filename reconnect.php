@@ -140,9 +140,13 @@ class reconnect{
 	public function __call($function,$args){
 		$driverClass='reconnectDriver_'.mb_strtolower($this->dbType);
 		if(method_exists($driverClass,$function))
-			return $driverClass::$function($args);
+			return $driverClass::$function($args,$this->handle);
 		else
 			return false;//toDo: throw Exception
+	}
+	public function escape($data){
+		$driverClass='reconnectDriver_'.mb_strtolower($this->dbType);
+		return $driverClass::escape($data,$this->handle);
 	}
 }
 ?>

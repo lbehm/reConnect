@@ -33,7 +33,7 @@ class reconnectDriver_mysql{
 	public static function getTables($data=false,$handle=false){
 		if(!$handle||!is_array($data)||!isset($data['db']))
 			return false;
-		$query=self::query_sql("SHOW TABLES FROM `".$data['db']."`;",$handle);
+		$query=self::query_sql("SHOW TABLES FROM `".self::escapeKey($data['db'])."`;",$handle);
 		$return=array();
 		while($re=self::fetch_assoc($query)){
 			$return[]=$re['Tables_in_test'];
@@ -61,12 +61,12 @@ class reconnectDriver_mysql{
 						//do some awesome stuff here
 						$i=0;
 						foreach($value as $fieldname=>$arr){
-							$query['fields'][$i]['name']=$fieldname;
+							$query['fields'][$i]['name']=self::escapeKey($fieldname);
 							foreach($arr as $k=>$v){
 								switch($k){
 									case'type':
 										if(is_string($v))
-											$query['fields'][$i]['type']=$v;
+											$query['fields'][$i]['type']=self::escapeKey($v);
 										break;
 									case'length':
 										if(is_int($v))
@@ -92,9 +92,9 @@ class reconnectDriver_mysql{
 										if(is_array($v)){
 											foreach($v as $enumopt){
 												if(isset($query['fields'][$i]['data']))
-													$query['fields'][$i]['data'].=((is_int($enumopt))?', '.$enumopt:", '".$enumopt."'");
+													$query['fields'][$i]['data'].=((is_int($enumopt))?', '.$enumopt:", '".self::escape($enumopt)."'");
 												else
-													$query['fields'][$i]['data'].=((is_int($enumopt))?' '.$enumopt:" '".$enumopt."'");
+													$query['fields'][$i]['data'].=((is_int($enumopt))?' '.$enumopt:" '".self::escape($enumopt)."'");
 											}
 										}
 										break;
@@ -104,7 +104,7 @@ class reconnectDriver_mysql{
 										break;
 									case'default':
 										if(is_string($v) || is_int($v) || is_float($v))
-											$query['fields'][$i]['default']=' DEFAULT '.((is_int($v))?$v:"'".$v."'");
+											$query['fields'][$i]['default']=' DEFAULT '.((is_int($v))?$v:"'".self::escape($v)."'");
 										break;
 									case'auto_increment':
 										if($v===true)
@@ -121,7 +121,7 @@ class reconnectDriver_mysql{
 										break;
 									case'comment':
 										if(is_string($v))
-											$query['fields'][$i]['comment']=" COMMENT '".$v."'";
+											$query['fields'][$i]['comment']=" COMMENT '".self::escape($v)."'";
 										break;
 								}
 							}
@@ -177,33 +177,33 @@ class reconnectDriver_mysql{
 							case'autoincrement':
 								//$v: int | false
 								if($v!==false && is_int($v)){
-									$query['table_options'].=' AUTO_INCREMENT = '.intval($v);
+									$query['table_options'].=' AUTO_INCREMENT = '.intval(self::escape($v));
 								}
 								break;
 							case'type':
 								//$v: string ( myisam | innodb | memory | ... )
 								if(is_string($v)){
-									$query['table_options'].=' ENGINE = '.$v;
+									$query['table_options'].=' ENGINE = '.self::escape($v);
 								}
 								break;
 							case'row_format':
 								//$v:	( DEFAULT | DYNAMIC | FIXED | COMPRESSED | REDUNDANT | COMPACT)
 								$t=array('DEFAULT','DYNAMIC','FIXED','COMPRESSED','REDUNDANT','COMPACT');
 								if(is_string($v)&&in_array(mb_strtoupper($v),$t)){
-									$query['table_options'].=' ROW_FORMAT = '.mb_strtoupper($v);
+									$query['table_options'].=' ROW_FORMAT = '.self::escape(mb_strtoupper($v));
 								}
 								unset($t);
 								break;
 							case'charset':
 								if(is_string($v)){
-									$query['table_options'].=' DEFAULT CHARACTER SET '.$v;
+									$query['table_options'].=' DEFAULT CHARACTER SET '.self::escape($v);
 									if(isset($value['collate']) && is_string($value['collate']))
-										$query['table_options'].=' COLLATE '.$value['collate'];
+										$query['table_options'].=' COLLATE '.self::escape($value['collate']);
 								}
 								break;
 							case'comment':
 								if(is_string($v)){
-									$query['table_options'].=" COMMENT = '".$v."'";
+									$query['table_options'].=" COMMENT = '".self::escape($v)."'";
 								}
 								break;
 							case'min_rows':
@@ -253,7 +253,7 @@ class reconnectDriver_mysql{
 		}
 		if(isset($query['primaray_arr']))
 			foreach($query['primaray_arr'] as $str){
-				$query['primaray'].=((isset($query['primaray']))?', ':'').'`'.$str.'`';
+				$query['primaray'].=((isset($query['primaray']))?', ':'').'`'.self::escapeKey($str).'`';
 			}
 		
 		
@@ -262,9 +262,9 @@ class reconnectDriver_mysql{
 		$query['sql'].=((isset($query['temporary']))?$query['temporary']:'');
 		$query['sql'].=' TABLE';
 		$query['sql'].=((isset($query['quiet']))?$query['quiet']:'');
-		$query['sql'].=' `'.$data['db'].'`.`'.$query['tbl_name'].'`';
+		$query['sql'].=' `'.self::escapeKey($data['db']).'`.`'.self::escapeKey($query['tbl_name']).'`';
 		if(isset($query['like'])&&is_string($query['like'])){
-			$query['sql'].=' LIKE `'.$query['like'].'`';
+			$query['sql'].=' LIKE `'.self::escapeKey($query['like']).'`';
 		}
 		else{
 			$query['sql'].=' (';
@@ -280,7 +280,7 @@ class reconnectDriver_mysql{
 	public static function removeCollection($data=false,$handle=false){
 		if(!$handle||!is_array($data)||!isset($data['collection'])||!isset($data['db']))
 			return false;
-		$query="DROP".((isset($data['temporary'])&&$data['temporary']===true)?' TEMPORARY':'')." TABLE `".$data['db']."`.`".$data['collection']."`;";
+		$query="DROP".((isset($data['temporary'])&&$data['temporary']===true)?' TEMPORARY':'')." TABLE `".self::escapeKey($data['db'])."`.`".self::escapeKey($data['collection'])."`;";
 		return self::query_sql($query,$handle);
 	}
 	public static function query_sql($query,$handle=false){
@@ -322,13 +322,13 @@ class reconnectDriver_mysql{
 							foreach($arr as $key=>$direction){
 								if($i)
 									$queryOrder.=',';
-								$queryOrder.=' `'.$key.'`'.(($direction == -1)?' DESC':' ASC');
+								$queryOrder.=' `'.self::escapeKey($key).'`'.(($direction == -1)?' DESC':' ASC');
 							}
 					}
 					if($data['limit']==true){
 						$queryLimit.=intval($data['limit']);
 					}
-					$query='DELETE FROM `'.$data['db'].'`.`'.$data['table'].'`'.
+					$query='DELETE FROM `'.self::escapeKey($data['db']).'`.`'.self::escapeKey($data['table']).'`'.
 						(($queryWhere!='')?' WHERE '.$queryWhere:'').
 						(($queryOrder!='')?' ORDER BY '.$queryOrder:'').
 						(($queryLimit!='')?' LIMIT '.$queryLimit:'').
@@ -341,7 +341,7 @@ class reconnectDriver_mysql{
 					$i=0;
 					foreach($data['update'] as $field=>$value){
 						//toDo escape
-						$querySet.=(($i)?',':'').' `'.$field.'` = '.((is_int($value))?$value:"'".$value."'");
+						$querySet.=(($i)?',':'').' `'.self::escapeKey($field).'` = '.((is_int($value))?$value:"'".self::escape($value)."'");
 						$i++;
 					}
 					if($data['where']==true){
@@ -355,7 +355,7 @@ class reconnectDriver_mysql{
 							$queryLimit.=" OFFSET ".intval($data['offset']);
 						}
 					}
-					$query.='UPDATE `'.$data['db'].'`.`'.$data['table'].'` SET '.$querySet.$queryWhere.$queryLimit.';';
+					$query='UPDATE `'.self::escapeKey($data['db']).'`.`'.self::escapeKey($data['table']).'` SET '.$querySet.$queryWhere.$queryLimit.';';
 					return self::query_sql($query,$data['handle']);
 					break;
 				case'replace':
@@ -363,12 +363,11 @@ class reconnectDriver_mysql{
 					$query = $queryField = $queryValue='';
 					$i=0;
 					foreach($data['replace'] as $field=>$value){
-						//toDo escape
-						$queryField.=(($i)?', ':' ')." `".$field."`";
-						$queryValue.=(($i)?', ':' ').((is_int($value))?$value:"'".$value."'");
+						$queryField.=(($i)?', ':' ')." `".self::escapeKey($field)."`";
+						$queryValue.=(($i)?', ':' ').((is_int($value))?$value:"'".self::escape($value)."'");
 						$i++;
 					}
-					$query.='REPLACE INTO `'.$data['db'].'`.`'.$data['table'].'` ('.$queryField.' ) VALUES('.$queryValue.' );';
+					$query='REPLACE INTO `'.self::escapeKey($data['db']).'`.`'.self::escapeKey($data['table']).'` ('.$queryField.' ) VALUES('.$queryValue.' );';
 					return self::query_sql($query,$data['handle']);
 					break;
 				case'insert':
@@ -376,12 +375,11 @@ class reconnectDriver_mysql{
 					$query = $queryField = $queryValue='';
 					$i=0;
 					foreach($data['insert'] as $field=>$value){
-						//toDo escape
-						$queryField.=(($i)?', ':' ')." `".$field."`";
-						$queryValue.=(($i)?', ':' ').((is_int($value))?$value:"'".$value."'");
+						$queryField.=(($i)?', ':' ')." `".self::escapeKey($field)."`";
+						$queryValue.=(($i)?', ':' ').((is_int($value))?$value:"'".self::escape($value)."'");
 						$i++;
 					}
-					$query.='INSERT INTO `'.$data['db'].'`.`'.$data['table'].'` ('.$queryField.' ) VALUES('.$queryValue.' );';
+					$query='INSERT INTO `'.self::escapeKey($data['db']).'`.`'.self::escapeKey($data['table']).'` ('.$queryField.' ) VALUES('.$queryValue.' );';
 					return self::query_sql($query,$data['handle']);
 					break;
 				case'select':
@@ -400,9 +398,9 @@ class reconnectDriver_mysql{
 						foreach($data['field'] as $i=>$field){
 							if($i)
 								$queryField.=',';
-							$queryField.=' `'.$field.'`';
+							$queryField.=' `'.self::escapeKey($field).'`';
 							if(isset($data['field_alias'][$field]))
-								$queryField.=' AS `'.$data['field_alias'][$field].'`';
+								$queryField.=' AS `'.self::escapeKey($data['field_alias'][$field]).'`';
 						}
 					}
 					else{
@@ -410,7 +408,7 @@ class reconnectDriver_mysql{
 							foreach($data['field'] as $i=>$field){
 								if($i)
 									$queryField.=',';
-								$queryField.=' `'.$field.'`';
+								$queryField.=' `'.self::escapeKey($field).'`';
 							}
 						else
 							$queryField=' *';
@@ -421,9 +419,8 @@ class reconnectDriver_mysql{
 					}
 					
 					if($data['where']==true){
-						$tmp=self::whereToSql($data['where']);
-						$queryWhere=(isset($tmp)&&$tmp!='')?' WHERE'.$tmp:'';
-						unset($tmp);
+						$queryWhere=self::whereToSql($data['where']);
+						$queryWhere=(isset($queryWhere)&&$queryWhere!='')?' WHERE'.$queryWhere:'';
 					}
 					
 					if($data['sort']==true){
@@ -431,12 +428,12 @@ class reconnectDriver_mysql{
 							foreach($arr as $key=>$direction){
 								if($i)
 									$queryOrder.=',';
-								$queryOrder.=' `'.$key.'`'.(($direction == -1)?' DESC':' ASC');
+								$queryOrder.=' `'.self::escapeKey($key).'`'.(($direction == -1)?' DESC':' ASC');
 							}
 						$queryOrder=($queryOrder!='')?' ORDER BY'.$queryOrder:'';
 					}
 					if($data['limit']==true){
-						$queryLimit.=" LIMIT ".intval($data['limit']);
+						$queryLimit=" LIMIT ".intval($data['limit']);
 						if($data['offset']==true){
 							$queryLimit.=" OFFSET ".intval($data['offset']);
 						}
@@ -444,7 +441,7 @@ class reconnectDriver_mysql{
 					$query="SELECT".
 						$queryDistinct.
 						$queryField.
-						' FROM `'.$data['db'].'`.`'.$data['table'].'`'.
+						' FROM `'.self::escapeKey($data['db']).'`.`'.self::escapeKey($data['table']).'`'.
 						$queryWhere.
 						$queryOrder.
 						$queryLimit.';';
@@ -469,6 +466,34 @@ class reconnectDriver_mysql{
 		if(!$resource)
 			return false;
 		return @mysql_affected_rows($resource);
+	}
+	public static function escape($data,$handle=false){
+		if(!$handle)
+			$handle=self::$last_link;
+		if(is_array($data)){
+			foreach($data as $key=>&$value){
+				$value=self::escape($value,$handle);
+			}
+			return $data;
+		}
+		elseif(is_string($data) || is_numeric($data)){
+			return mysql_real_escape_string($data);
+		}
+		else
+			return false;
+	}
+	public static function escapeKey($data,$handle=false){
+		if(is_array($data)){
+			foreach($data as $key=>&$value){
+				$value=self::escapeKey($value);
+			}
+			return $data;
+		}
+		elseif(is_string($data) || is_numeric($data)){
+			return str_replace(array('`'),array('``'),$data);
+		}
+		else
+			return false;
 	}
 	
 	/*helper*/
@@ -506,8 +531,7 @@ class reconnectDriver_mysql{
 					}
 					elseif(is_string($val)){
 						//'x' = 'foo'
-						//toDo Escape $val
-						$ret.=' '.$str." = '".$val."'";
+						$ret.=' '.$str." = '".self::escape($val)."'";
 					}
 					elseif(is_array($val)){
 						//'x' = array('%ne'=>'3')
@@ -529,62 +553,62 @@ class reconnectDriver_mysql{
 											if(is_string($k1))
 												switch($k1){
 													case'%ne':
-														$ret.=' '.$str.'  <> '.((is_int($v1))?$v1:"'".$v1."'");
+														$ret.=' '.$str.'  <> '.((is_int($v1))?$v1:"'".self::escape($v1)."'");
 														break;
 													case'%lt':
-														$ret.=' '.$str.' < '.((is_int($v1))?$v1:"'".$v1."'");
+														$ret.=' '.$str.' < '.((is_int($v1))?$v1:"'".self::escape($v1)."'");
 														break;
 													case'%gt':
-														$ret.=' '.$str.' > '.((is_int($v1))?$v1:"'".$v1."'");
+														$ret.=' '.$str.' > '.((is_int($v1))?$v1:"'".self::escape($v1)."'");
 														break;
 													case'%lte':
-														$ret.=' '.$str.' <= '.((is_int($v1))?$v1:"'".$v1."'");
+														$ret.=' '.$str.' <= '.((is_int($v1))?$v1:"'".self::escape($v1)."'");
 														break;
 													case'%gte':
-														$ret.=' '.$str.' >= '.((is_int($v1))?$v1:"'".$v1."'");
+														$ret.=' '.$str.' >= '.((is_int($v1))?$v1:"'".self::escape($v1)."'");
 														break;
 													case'%match':
-														$ret.=' '.$str." REGEXP '".str_replace('\\','\\\\',$v1)."'";
+														$ret.=' '.$str." REGEXP '".str_replace('\\','\\\\',self::escape($v1))."'";
 														break;
 													case'%notmatch':
-														$ret.=' '.$str." NOT REGEXP '".str_replace('\\','\\\\',$v1)."'";
+														$ret.=' '.$str." NOT REGEXP '".str_replace('\\','\\\\',self::escape($v1))."'";
 														break;
 													default:
-														$ret.=' '.$str.' = '.((is_int($v1))?$v1:"'".$v1."'");
+														$ret.=' '.$str.' = '.((is_int($v1))?$v1:"'".self::escape($v1)."'");
 												}
 											elseif(is_int($k1))
-												$ret.=' '.$str.' = '.((is_int($v1))?$v1:"'".$v1."'");
+												$ret.=' '.$str.' = '.((is_int($v1))?$v1:"'".self::escape($v1)."'");
 											$k++;
 										}
 										$ret.=' )';
 										break;
 									case '%ne':
-										$ret.=' '.$str.'  <> '.((is_int($v))?$v:"'".$v."'");
+										$ret.=' '.$str.'  <> '.((is_int($v))?$v:"'".self::escape($v)."'");
 										break;
 									case '%lt':
-										$ret.=' '.$str.' < '.((is_int($v))?$v:"'".$v."'");
+										$ret.=' '.$str.' < '.((is_int($v))?$v:"'".self::escape($v)."'");
 										break;
 									case '%gt':
-										$ret.=' '.$str.' > '.((is_int($v))?$v:"'".$v."'");
+										$ret.=' '.$str.' > '.((is_int($v))?$v:"'".self::escape($v)."'");
 										break;
 									case '%lte':
-										$ret.=' '.$str.' <= '.((is_int($v))?$v:"'".$v."'");
+										$ret.=' '.$str.' <= '.((is_int($v))?$v:"'".self::escape($v)."'");
 										break;
 									case '%gte':
-										$ret.=' '.$str.' >= '.((is_int($v))?$v:"'".$v."'");
+										$ret.=' '.$str.' >= '.((is_int($v))?$v:"'".self::escape($v)."'");
 										break;
 									case '%match':
-										$ret.=' '.$str." REGEXP '".str_replace('\\','\\\\',$v)."'";
+										$ret.=' '.$str." REGEXP '".str_replace('\\','\\\\',self::escape($v))."'";
 										break;
 									case '%notmatch':
-										$ret.=' '.$str." NOT REGEXP '".str_replace('\\','\\\\',$v)."'";
+										$ret.=' '.$str." NOT REGEXP '".str_replace('\\','\\\\',self::escape($v))."'";
 										break;
 									default :
-										$ret.=' '.$str.' = '."'".$s."'";
+										$ret.=' '.$str." = '".self::escape($s)."'";
 								}
 							}
 							elseif(is_int($s)){
-								$ret.=' '.$str.' = '.((is_int($v))?$v:"'".$v."'");
+								$ret.=' '.$str.' = '.((is_int($v))?$v:"'".self::escape($v)."'");
 							}
 							$j++;
 						}
