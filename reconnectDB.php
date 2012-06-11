@@ -36,7 +36,7 @@ class reconnectDB{
 			return $this->childs[$name];
 		// does $name exist?
 		$driver='reconnectDriver_'.mb_strtolower($this->dbType);
-		if(in_array($name,$driver::getTables(array('db'=>$this->dbName),$this->handle))){
+		if(in_array($name,$driver::getCollections(array('db'=>$this->dbName),$this->handle))){
 			// create new reconnectCollection
 			$key=md5('reconnect'.rand(1000,9999).time());
 			$this->authkeys[]=$key;

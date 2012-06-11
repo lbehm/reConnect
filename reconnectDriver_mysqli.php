@@ -31,7 +31,7 @@ class reconnectDriver_mysqli implements reconnectDriver{
 		return mysqli_set_charset($handle,$charset);
 	}
 	/*table/query*/
-	public static function getTables($data=false,$handle=false){
+	public static function getCollections($data=false,$handle=false){
 		if(!$handle||!is_array($data)||!isset($data['db']))
 			return false;
 		$query=self::query_sql("SHOW TABLES FROM `".self::escapeKey($data['db'])."`;",$handle);

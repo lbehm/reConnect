@@ -6,7 +6,7 @@ interface reconnectDriver{
 	public static function close($dbal,$handle);
 	public static function set_charset($dbal,$charset,$handle);
 	/*collection/query*/
-	public static function getTables($data=false,$handle=false);
+	public static function getCollections($data=false,$handle=false);
 	public static function createCollection($data=false,$handle=false);
 	public static function removeCollection($data=false,$handle=false);
 	public static function getTypeByArray($data);
