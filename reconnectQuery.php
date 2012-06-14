@@ -85,8 +85,26 @@ class reconnectQuery{
 		}
 		return $ret;
 	}
-	public function getAssoc(){
-		return $this->resultData;
+	public function getAssoc($fill=''){
+		if($fill===false)
+			return $this->resultData;
+		$fields=array();
+		foreach($this->resultData as $row){
+			foreach($row as $field=>$value){
+				$fields[$field]=$fill;
+			}
+		}
+		$return=array();
+		$i=0;
+		foreach($this->resultData as $row){
+			$return[$i]=$fields;
+			foreach($row as $field=>$value){
+				$return[$i][$field]=$value;
+			}
+			$i++;
+		}
+		
+		return $return;
 	}
 	public function getAffectedRows(){
 		return $this->affectedRows;
