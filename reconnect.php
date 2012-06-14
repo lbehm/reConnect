@@ -22,7 +22,7 @@ class reconnect{
 			$this->connection=array(
 				'scheme'=>	((isset($connection['scheme']))?mb_strtolower(rawurldecode($connection['scheme'])):false),
 				'host'=>	((isset($connection['host']))?	rawurldecode($connection['host']):'localhost'),
-				'port'=>	((isset($connection['port']))?	rawurldecode($connection['port']):'3306'),
+				'port'=>	((isset($connection['port']))?	rawurldecode($connection['port']):''),
 				'user'=>	((isset($connection['user']))?	rawurldecode($connection['user']):'root'),
 				'pass'=>	((isset($connection['pass']))?	rawurldecode($connection['pass']):''),
 				'db'=>		((isset($connection['path']))?	substr(rawurldecode($connection['path']),1):'')

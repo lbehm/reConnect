@@ -6,7 +6,7 @@ class reconnectDriver_mysqli implements reconnectDriver{
 	
 	/*connection*/
 	public static function connect($dbal,$data,&$handle){
-		$handle=mysqli_connect($data['host'],$data['user'],$data['pass'],null,$data['port']);
+		$handle=mysqli_connect($data['host'],$data['user'],$data['pass'],null,((empty($data['port']))?'3306':$data['port']));
 		self::$last_link=$handle;
 		return (!mysqli_connect_error())?true:false;
 	}

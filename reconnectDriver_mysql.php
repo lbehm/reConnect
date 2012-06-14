@@ -6,7 +6,7 @@ class reconnectDriver_mysql implements reconnectDriver{
 	
 	/*connection*/
 	public static function connect($dbal,$data,&$handle){
-		$handle=@mysql_connect($data['host'].':'.$data['port'],$data['user'],$data['pass'],false,$data['options']['flags']);
+		$handle=@mysql_connect($data['host'].((empty($data['port']))?'':':'.$data['port']),$data['user'],$data['pass'],false,$data['options']['flags']);
 		self::$last_link=$handle;
 		return ($handle)?true:false;
 	}
