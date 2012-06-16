@@ -148,3 +148,4 @@ class reconnectQuery{
 		//return int of current cursor position
 	}
 }
+?>
