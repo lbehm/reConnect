@@ -89,7 +89,7 @@ class reconnectDriver_mongo implements reconnectDriver{
 					//build delete query
 					$queryWhere=array();
 					if($data['where']==true){
-					//	$queryWhere=self::whereToSql($data['where']);
+						$queryWhere=self::whereToQuery($data['where']);
 					}
 					/*if($data['sort']==true){
 						foreach($data['sort'] as $i=>$arr)
@@ -110,8 +110,7 @@ class reconnectDriver_mongo implements reconnectDriver{
 					//build update query
 					$queryWhere=array();
 					if($data['where']==true){
-						$queryWhere=array();
-						//toDo
+						$queryWhere=self::whereToQuery($data['where']);
 					}
 					$result = $data['handle']->selectDB($data['db'])->selectCollection($data['table'])->update($queryWhere,array('$set'=>$data['update']),array('multiple'=>true));
 					/* toDO
@@ -134,13 +133,8 @@ class reconnectDriver_mongo implements reconnectDriver{
 					//build select query
 					$queryField=array();
 					$queryWhere=array();
-					
 					if(count($data['where'])){
-						//toDo: where
-					}
-					
-					if(count($data['field_alias'])){
-						//toDo: aliases for fields
+						$queryWhere=self::whereToQuery($data['where']);
 					}
 					if(count($data['field']))
 						foreach($data['field'] as $i=>$field){
@@ -149,7 +143,6 @@ class reconnectDriver_mongo implements reconnectDriver{
 					else
 						$queryField=array();
 					$cursor = $data['handle']->selectDB($data['db'])->selectCollection($data['table'])->find($queryWhere,$queryField);
-					
 					if($data['distinct']==true){
 						//toDo: distinct
 					}
@@ -167,9 +160,9 @@ class reconnectDriver_mongo implements reconnectDriver{
 					if(is_int($data['offset']))
 						$cursor=$cursor->skip(intval($data['offset']));
 					if($data['count']==true)
-						return $cursor->count();
+						return $cursor->count();//toDo
 					
-					return $cursor;
+					return array('cursor'=>$cursor,'query'=>$data);
 					break;
 				default:
 			}
@@ -179,7 +172,27 @@ class reconnectDriver_mongo implements reconnectDriver{
 	public static function fetch_assoc($cursor=false){
 		if(!$cursor)
 			return false;
-		return $cursor->getNext();
+		if(is_array($cursor)){
+			$pointer = $cursor['cursor']->getNext();
+			if($pointer!=null){
+				if(count($cursor['query']['field']))
+					foreach($pointer as $key=>$val){
+						if(!in_array($key,$cursor['query']['field']))
+							unset($pointer[$key]);
+					}
+				if(count($cursor['query']['field_alias']))
+				foreach($pointer as $key=>$val){
+					if(isset($cursor['query']['field_alias'][$key])){
+						unset($pointer[$key]);
+						$pointer[$cursor['query']['field_alias'][$key]]=$val;
+					}
+				}
+				return $pointer;
+			}
+		}
+		else{
+			return $cursor->getNext();
+		}
 	}
 	public static function getLastError($handle=false){
 		if(!$handle)
@@ -199,5 +212,59 @@ class reconnectDriver_mongo implements reconnectDriver{
 	}
 	
 	/*helper*/
+	public function whereToQuery($data){
+		/* deal with it:
+			array('%or'=>array(array('x'=>array('%gt'=>3)),array('x'=>array('%gt'=>3))))
+		*/
+		$data=array('%and'=>$data);
+		$data=self::controlCharReplace($data);
+		$data=self::getQueryArrayChild($data);
+		$data=self::wherePostCleanup($data);
+		return $data;
+	}
+	public function wherePostCleanup($data){
+		$ret=array();
+		foreach($data as $key=>$value){
+			if(($key=='$and'||$key=='$or')&&(count($value)>1)&&is_array($value)){
+				$ret[$key]=array();
+				foreach($value as $k=>$v){
+					if(is_array($v))
+						$ret[$key][]=array($k=>self::wherePostCleanup($v));
+					else
+						$ret[$key][]=array($k=>$v);
+				}
+			}
+			elseif(is_array($value))
+				$ret[$key]=self::wherePostCleanup($value);
+			else
+				$ret[$key]=$value;
+		}
+		return $ret;
+	}
+	public function getQueryArrayChild($out){
+		$ret=array();
+		foreach($out as $key=>$value){
+			if(($key=='$and'||$key=='$or'||is_int($key))&&(count($value)===1)&&is_array($value)){
+				$ret=array_merge($ret,self::getQueryArrayChild($value));
+			}
+			elseif(is_array($value))
+				$ret[$key]=self::getQueryArrayChild($value);
+			else
+			$ret[$key]=$value;
+		}
+		return $ret;
+	}
+	public function controlCharReplace($data,$from='%',$to='$'){
+		if(!is_array($data))
+		return $data;
+		$out=array();
+		foreach($data as $key=>$value){
+		if(mb_strpos($key,'%')===0)
+			$key='$'.mb_substr($key,1);
+		$out[$key]=self::controlCharReplace($value);
+		}
+		return $out;
+	}
 }
+class reconnectDriver_mongodb extends reconnectDriver_mongo {}
 ?>
