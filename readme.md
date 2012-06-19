@@ -15,10 +15,10 @@ Please look in index.php for a quick example.
 ##SQL to reConnect interface
 
 ```sql
-INSERT INTO USERS VALUES(1,1)
+INSERT INTO users ( `foo`, `bar` ) VALUES( 'herp', 'derp' )
 ```
 ```php
-	$db->users->insert(array(1,1));
+	$db->users->insert(array('foo'=>'herp','bar'=>'derp'));
 ```
 
 ```sql
