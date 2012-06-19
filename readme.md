@@ -184,6 +184,7 @@ DELETE FROM users WHERE z>=10 LIMIT 20
 
 
 ##Creating a table
+###with mysql
 ```php
 $table=$conn->test->createTable(array(
 	'name'=>'temp',
@@ -226,4 +227,8 @@ $table=$conn->test->createTable(array(
 		'delay_key_write'=>false,
 	)
 ));
+```
+###with mongodb
+```php
+$table=$conn->test->createTable(array('name'=>'temp'));
 ```
