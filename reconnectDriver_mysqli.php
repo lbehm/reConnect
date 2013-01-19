@@ -6,14 +6,14 @@ class reconnectDriver_mysqli implements reconnectDriver{
 	
 	/*connection*/
 	public static function connect($dbal,$data,&$handle){
-		$handle=mysqli_connect($data['host'],$data['user'],$data['pass'],null,((empty($data['port']))?'3306':$data['port']));
+		$handle=@mysqli_connect($data['host'],$data['user'],$data['pass'],null,((empty($data['port']))?'3306':$data['port']));
 		self::$last_link=$handle;
-		return (!mysqli_connect_error())?true:false;
+		return (!@mysqli_connect_error())?true:false;
 	}
 	public static function selectDB($dbal,$dbName,$handle){
 		if(!$handle)
 			return false;
-		$r = mysqli_select_db($handle,$dbName);
+		$r = @mysqli_select_db($handle,$dbName);
 		if($r)
 			self::$last_db = $dbName;
 		return $r;
@@ -21,14 +21,14 @@ class reconnectDriver_mysqli implements reconnectDriver{
 	public static function close($dbal,$handle){
 		if($handle){
 			self::$last_link=false;
-			return mysqli_close($handle);
+			return @mysqli_close($handle);
 		}
 	}
 	public static function set_charset($dbal,$charset,$handle){
 		if(!$handle)
 			return false;
 		self::$last_link=$handle;
-		return mysqli_set_charset($handle,$charset);
+		return @mysqli_set_charset($handle,$charset);
 	}
 	/*table/query*/
 	public static function getCollections($data=false,$handle=false){
@@ -291,7 +291,7 @@ class reconnectDriver_mysqli implements reconnectDriver{
 		if(!$handle)
 			return false;
 		self::$last_link=$handle;
-		return mysqli_query($handle,$query);
+		return @mysqli_query($handle,$query);
 	}
 	public static function getTypeByArray($data){
 		if($data['remove']===true)
@@ -459,17 +459,17 @@ class reconnectDriver_mysqli implements reconnectDriver{
 	public static function fetch_assoc($resource=false){
 		if(!$resource)
 			return false;
-		return mysqli_fetch_assoc($resource);
+		return @mysqli_fetch_assoc($resource);
 	}
 	public static function getLastError($handle=false){
 		if(!$handle)
 			$handle=self::$last_link;
-		return mysqli_error($handle);
+		return @mysqli_error($handle);
 	}
 	public static function affected_rows($resource=false){
 		if(is_bool($resource))
 			$resource=self::$last_link;
-		return mysqli_affected_rows($resource);
+		return @mysqli_affected_rows($resource);
 	}
 	public static function escape($data,$handle=false){
 		if(!$handle)
@@ -481,7 +481,7 @@ class reconnectDriver_mysqli implements reconnectDriver{
 			return $data;
 		}
 		elseif(is_string($data) || is_numeric($data)){
-			return mysqli_real_escape_string($handle,$data);
+			return @mysqli_real_escape_string($handle,$data);
 		}
 		else
 			return false;
