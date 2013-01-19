@@ -35,24 +35,37 @@ class reconnect{
 				unset($options);
 			}
 			unset($connection);
+		}
+		elseif(is_a($connection,'link')){
+			$this->connection=array(
+				'scheme'=>	($connection->get('scheme'))?mb_strtolower($connection->get('scheme')):false,
+				'host'=>	($connection->get('host'))?	$connection->get('host'):'localhost',
+				'port'=>	($connection->get('port'))?	$connection->get('port'):'',
+				'user'=>	($connection->get('user'))?	$connection->get('user'):'root',
+				'pass'=>	($connection->get('pass'))?	$connection->get('pass'):'',
+				'db'=>		($connection->get('path'))?	$connection->get('path'):'',
+				'options'=>	$connection->getOption()
+			);
+			
+		}
+		if($this->connection['scheme']!=false){
 			if(!isset($this->connection['options']['flags']))
 				$this->connection['options']['flags']=0;
-			if($this->connection['scheme']!=false){
-				$this->dbType=$this->connection['scheme'];
-				$driverClass='reconnectDriver_'.mb_strtolower($this->dbType);
-				require_once($driverClass.'.php');
-				if(class_exists($driverClass)){
-					if($driverClass::connect($this,$this->connection,$this->handle)){
-						$this->open=true;
-						if(isset($this->connection['options']['charset']))
-							$this->set_charset($this->connection['options']['charset']);
-						if($this->connection['db']!='')
-							$this->selectDB($this->connection['db']);
-						return;
-					}
+			$this->dbType=$this->connection['scheme'];
+			$driverClass='reconnectDriver_'.mb_strtolower($this->dbType);
+			require_once($driverClass.'.php');
+			if(class_exists($driverClass)){
+				if($driverClass::connect($this,$this->connection,$this->handle)){
+					$this->open=true;
+					if(isset($this->connection['options']['charset']))
+						$this->set_charset($this->connection['options']['charset']);
+					if($this->connection['db']!='')
+						$this->selectDB($this->connection['db']);
+					return;
 				}
 			}
 		}
+		
 		throw new Exception("Connection failed");
 	}
 	
